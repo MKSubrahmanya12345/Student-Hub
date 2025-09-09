@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScheduleSync</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css' rel='stylesheet' />
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .full-screen-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .fc .fc-daygrid-event {
+            border-radius: 0.5rem;
+            padding: 0.25rem;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 text-gray-100">
+    <div id="auth-check" class="full-screen-container">
+        <p>Checking login status...</p>
+    </div>
+
+    <div id="main-app" class="container hidden">
+        <div class="flex justify-between items-center mb-6 py-4">
+            <h1 id="welcome-message" class="text-3xl font-bold">Hello!</h1>
+            <button id="logout-button"
+                class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors">Logout</button>
+        </div>
+
+        <div class="grid lg:grid-cols-4 gap-6">
+            <div class="lg:col-span-1 bg-gray-800 p-6 rounded-lg shadow-lg flex flex-col items-center">
+                <h2 class="text-xl font-semibold mb-4">Profile</h2>
+                <img id="profile-pic" class="w-32 h-32 rounded-full mb-4 object-cover border-4 border-gray-700"
+                    alt="Profile Picture">
+                <div class="text-center">
+                    <p id="profile-name" class="text-lg font-bold"></p>
+                    <p id="profile-usn" class="text-gray-400 text-sm"></p>
+                    <p id="profile-email" class="text-gray-400 text-sm"></p>
+                    <p id="profile-desig" class="text-gray-400 text-sm"></p>
+                </div>
+                <button id="export-csv-button"
+                    class="mt-4 w-full p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors">Export Events as
+                    CSV</button>
+                <button id="feedback-button"
+                    class="mt-4 w-full p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors">Feedback / Report
+                    Error</button>
+            </div>
+
+            <div class="lg:col-span-3">
+                <div id="admin-dashboard" class="mb-6 hidden">
+                    <h2 class="text-2xl font-semibold mb-4">Admin Dashboard</h2>
+                    <div class="bg-gray-800 rounded-lg p-6">
+                        <div class="tabs flex gap-2 mb-4 border-b border-gray-700">
+                            <button class="tab-btn px-4 py-2 rounded-t-lg bg-indigo-600" data-tab="user-management">User
+                                Management</button>
+                            <button class="tab-btn px-4 py-2 rounded-t-lg bg-gray-700 hover:bg-gray-600"
+                                data-tab="event-management">Event Management</button>
+                            <button class="tab-btn px-4 py-2 rounded-t-lg bg-gray-700 hover:bg-gray-600"
+                                data-tab="bulk-email">Bulk Email</button>
+                        </div>
+                        <div id="tab-content">
+                            <div id="user-management" class="tab-pane active">
+                                <h3 class="text-xl font-bold mb-4">User Management</h3>
+                                <div id="users-list-container"></div>
+                            </div>
+                            <div id="event-management" class="tab-pane hidden">
+                                <h3 class="text-xl font-bold mb-4">Event Management</h3>
+                                <div id="admin-events-list"></div>
+                            </div>
+                            <div id="bulk-email" class="tab-pane hidden">
+                                <h3 class="text-xl font-bold mb-4">Send Bulk Email</h3>
+                                <input type="text" id="email-subject" placeholder="Email Subject"
+                                    class="w-full p-3 mb-4 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <textarea id="email-body" placeholder="Email Body"
+                                    class="w-full p-3 mb-4 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 h-32"></textarea>
+                                <label class="flex items-center mb-4">
+                                    <input type="checkbox" id="email-consent-filter" class="mr-2" checked>
+                                    <span class="text-gray-300 text-sm">Only send to users who agreed to receive email
+                                        updates</span>
+                                </label>
+                                <button id="send-emails-btn"
+                                    class="w-full p-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors">Send
+                                    Emails</button>
+                                <div id="email-status" class="mt-4"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="add-event-form" class="bg-gray-800 p-6 rounded-lg shadow-lg mb-6 hidden">
+                    <h2 class="text-xl font-semibold mb-4">Enter Event Details</h2>
+                    <input type="text" id="event-title" placeholder="Title"
+                        class="w-full p-3 mb-4 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <div class="flex gap-4 mb-4">
+                        <input type="date" id="event-start-date"
+                            class="w-1/2 p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <input type="date" id="event-end-date"
+                            class="w-1/2 p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <input type="text" id="event-description" placeholder="Description"
+                        class="w-full p-3 mb-4 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <div class="flex items-center gap-4 mb-6">
+                        <label for="event-color">Color:</label>
+                        <input type="color" id="event-color" value="#ff5722">
+                    </div>
+                    <button id="add-event-button"
+                        class="w-full p-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 font-semibold transition-colors">Add
+                        Event</button>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <div id="calendar-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="feedback-modal"
+        class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold">Feedback / Report an Error</h2>
+                <button id="close-feedback-modal" class="text-gray-400 hover:text-gray-200">&times;</button>
+            </div>
+            <p id="feedback-name-display" class="mb-2">Your Name: Loading...</p>
+            <p id="feedback-email-display" class="mb-4">Your Email: Loading...</p>
+            <textarea id="feedback-message" placeholder="Describe your feedback or the problem"
+                class="w-full p-3 mb-4 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 h-32"></textarea>
+            <button id="send-feedback-button"
+                class="w-full p-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 font-semibold transition-colors">Send
+                Feedback</button>
+            <div id="feedback-status" class="mt-4 text-center"></div>
+        </div>
+    </div>
+    <div id="event-details-modal"
+        class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h2 id="event-details-title" class="text-xl font-semibold">Event Details</h2>
+                <button id="close-event-modal" class="text-gray-400 hover:text-gray-200">&times;</button>
+            </div>
+            <p id="event-details-start" class="mb-2"></p>
+            <p id="event-details-end" class="mb-2"></p>
+            <p id="event-details-desc" class="mb-2"></p>
+            <p id="event-details-creator" class="mb-2"></p>
+            <div id="event-creator-profile" class="mt-4 p-4 bg-gray-700 rounded-lg hidden">
+                <img id="creator-profile-pic"
+                    class="w-24 h-24 rounded-full mx-auto mb-2 object-cover border-4 border-gray-600"
+                    alt="Creator Profile">
+                <p id="creator-profile-name" class="text-center font-bold"></p>
+                <p id="creator-profile-usn" class="text-center text-sm text-gray-400"></p>
+                <p id="creator-profile-email" class="text-center text-sm text-gray-400"></p>
+                <p id="creator-profile-desig" class="text-center text-sm text-gray-400"></p>
+            </div>
+        </div>
+    </div>
+    <div id="status-modal"
+        class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md text-center">
+            <div id="status-icon" class="text-4xl mb-4"></div>
+            <p id="status-message" class="text-lg"></p>
+            <button id="close-status-modal"
+                class="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg">OK</button>
+        </div>
+    </div>
+    <div id="confirm-modal"
+        class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md text-center">
+            <h2 id="confirm-message" class="text-lg text-white mb-4"></h2>
+            <div class="flex justify-center space-x-4">
+                <button id="confirm-yes-btn"
+                    class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white">Yes</button>
+                <button id="confirm-no-btn"
+                    class="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg text-white">No</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- DOM ELEMENTS ---
+        const authCheck = document.getElementById('auth-check');
+        const mainAppView = document.getElementById('main-app');
+        const welcomeMessageEl = document.getElementById('welcome-message');
+        const profilePicEl = document.getElementById('profile-pic');
+        const profileNameEl = document.getElementById('profile-name');
+        const profileUSNEl = document.getElementById('profile-usn');
+        const profileEmailEl = document.getElementById('profile-email');
+        const profileDesigEl = document.getElementById('profile-desig');
+        const adminDashboardEl = document.getElementById('admin-dashboard');
+        const addEventFormEl = document.getElementById('add-event-form');
+        const feedbackModal = document.getElementById('feedback-modal');
+        const eventDetailsModal = document.getElementById('event-details-modal');
+        const statusModal = document.getElementById('status-modal');
+        const statusMessage = document.getElementById('status-message');
+        const statusIcon = document.getElementById('status-icon');
+        const fullCalendarEl = document.getElementById('calendar-container');
+
+        let calendarInstance = null;
+        let currentUser = null;
+        let db, auth;
+
+        // --- Mock data representing a database, kept for original events ---
+        const usersDB = [
+            { id: 'user1', name: 'John Doe', usn: 'NMAMIT123', email: 'nmamit123@nmamit.in', password: 'password123', desig: 'Admin', consent: 'Y' },
+            { id: 'user2', name: 'Jane Smith', usn: 'NMAMIT456', email: 'nmamit456@nmamit.in', password: 'password456', desig: 'Club Leader', consent: 'Y' },
+            { id: 'user3', name: 'Bob Johnson', usn: 'NMAMIT789', email: 'nmamit789@nmamit.in', password: 'password789', desig: 'Student', consent: 'N' }
+        ];
+
+        const eventsDB = [
+            { id: 'event1', title: 'Code-a-thon', start: '2025-09-15', end: '2025-09-17', description: 'Annual coding competition.', color: '#3f51b5', USN: 'NMAMIT456' },
+            { id: 'event2', title: 'Freshers Day', start: '2025-09-20', end: '2025-09-20', description: 'Freshers welcome party.', color: '#f44336', USN: 'NMAMIT123' },
+            { id: 'event3', title: 'Farewell', start: '2025-09-28', end: '2025-09-28', description: 'Farewell party for students.', color: '#009688', USN: 'NMAMIT123' }
+        ];
+
+        // --- FIREBASE CONFIG (Your personal configuration) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdTqMliXW7ZK4s3IdNE2TPf724lWdAmaQ",
+            authDomain: "notestack-47cc7.firebaseapp.com",
+            projectId: "notestack-47cc7",
+            storageBucket: "notestack-47cc7.appspot.com",
+            messagingSenderId: "336248626285",
+            appId: "1:336248626285:web:2dbfe4f3135ec2fe8fb364"
+        };
+        const appId = firebaseConfig.projectId;
+
+        // --- INITIALIZATION ---
+        async function initialize() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setupAuthListener();
+                setupEventListeners();
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                authCheck.innerHTML = `<div class="p-4 bg-red-100 text-red-700 rounded-lg"><strong>Error:</strong> Could not connect to the database.</div>`;
+            }
+        }
+
+        function setupAuthListener() {
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    currentUser = await fetchAndDisplayUserData(user.uid);
+                    authCheck.classList.add('hidden');
+                    mainAppView.classList.remove('hidden');
+                    renderApp();
+                    setupFirestoreListener(user.uid);
+                } else {
+                    authCheck.classList.remove('hidden');
+                    authCheck.innerHTML = `<div class="w-full max-w-lg bg-gray-800 p-8 rounded-lg shadow-lg text-center">
+                                                <h1 class="text-xl text-red-400">Not Logged In</h1>
+                                                <p class="mt-4">Please log in to the Student Hub to view events.</p>
+                                                <a href="index2.html" class="mt-4 inline-block px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg">Go to Login</a>
+                                           </div>`;
+                    mainAppView.classList.add('hidden');
+                }
+            });
+        }
+        
+        async function fetchAndDisplayUserData(userId) {
+            const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/dashboard/user_info`);
+            const docSnap = await getDoc(userDocRef);
+            let userData = docSnap.exists() ? docSnap.data() : { name: 'Student', usn: 'N/A', desig: 'Student' };
+            
+            return {
+                name: userData.name,
+                usn: userData.usn,
+                email: auth.currentUser.email,
+                desig: userData.desig,
+                id: userId
+            };
+        }
+
+        function renderApp() {
+            welcomeMessageEl.textContent = `Hello, ${currentUser.name}!`;
+            profileNameEl.textContent = currentUser.name;
+            profileUSNEl.textContent = `USN: ${currentUser.usn}`;
+            profileEmailEl.textContent = `Email: ${currentUser.email}`;
+            profileDesigEl.textContent = `Designation: ${currentUser.desig}`;
+            profilePicEl.src = `https://university-student-photos.s3.ap-south-1.amazonaws.com/049/student_photos%2F${currentUser.usn}.JPG`;
+
+            if (['Admin', 'Club Leader', 'Class CR'].includes(currentUser.desig)) {
+                adminDashboardEl.classList.remove('hidden');
+                addEventFormEl.classList.remove('hidden');
+                renderAdminDashboard();
+            } else {
+                adminDashboardEl.classList.add('hidden');
+                addEventFormEl.classList.add('hidden');
+            }
+        }
+
+        function setupFirestoreListener(userId) {
+            const q = query(collection(db, `artifacts/${appId}/users/${userId}/subjects`));
+            onSnapshot(q, (snapshot) => {
+                let fetchedTasks = [];
+                snapshot.forEach((doc) => {
+                    const tasksText = doc.data().tasks;
+                    if (tasksText) {
+                        const parsed = parseTasksFromText(tasksText, doc.id);
+                        fetchedTasks = fetchedTasks.concat(parsed);
+                    }
+                });
+                renderCalendar(fetchedTasks);
+            });
+        }
+
+        function parseTasksFromText(text, subject) {
+            const regex = /\(due:\s*(\d{4}-\d{2}-\d{2})\)/g;
+            let match;
+            const tasks = [];
+            while ((match = regex.exec(text)) !== null) {
+                const title = text.substring(0, match.index).split('\n').pop().trim();
+                tasks.push({
+                    title: `${title} (${subject})`,
+                    start: match[1],
+                    end: match[1],
+                    description: `Task from ${subject} repo`,
+                    color: '#60a5fa', // A distinct color for tasks
+                    USN: currentUser.usn
+                });
+            }
+            return tasks;
+        }
+
+        // --- Events-specific UI rendering and logic ---
+
+        function renderCalendar(dynamicEvents = []) {
+            if (calendarInstance) {
+                calendarInstance.destroy();
+            }
+            
+            const allEvents = [...eventsDB, ...dynamicEvents];
+
+            const formattedEvents = allEvents.map(e => ({
+                id: e.id,
+                title: e.title,
+                start: e.start,
+                end: e.end,
+                backgroundColor: e.color,
+                extendedProps: {
+                    description: e.description,
+                    usn: e.USN
+                }
+            }));
+
+            calendarInstance = new FullCalendar.Calendar(fullCalendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
+                },
+                events: formattedEvents,
+                eventClick: function (info) {
+                    const event = info.event;
+                    const creatorId = event.extendedProps.usn;
+                    const creator = usersDB.find(u => u.usn === creatorId);
+
+                    document.getElementById('event-details-title').textContent = event.title;
+                    document.getElementById('event-details-start').innerHTML = `📅 <strong>Start Date:</strong> ${new Date(event.start).toLocaleDateString()}`;
+                    document.getElementById('event-details-end').innerHTML = `⏳ <strong>End Date:</strong> ${event.end ? new Date(event.end).toLocaleDateString() : 'N/A'}`;
+                    document.getElementById('event-details-desc').innerHTML = `📝 <strong>Description:</strong> ${event.extendedProps.description || 'No description'}`;
+                    document.getElementById('event-details-creator').innerHTML = `👤 <strong>Created By:</strong> ${creator ? creator.name : 'Unknown'}`;
+
+                    if (creator) {
+                        document.getElementById('event-creator-profile').classList.remove('hidden');
+                        document.getElementById('creator-profile-pic').src = `https://university-student-photos.s3.ap-south-1.amazonaws.com/049/student_photos%2F${creator.usn}.JPG`;
+                        document.getElementById('creator-profile-name').textContent = creator.name;
+                        document.getElementById('creator-profile-usn').textContent = creator.usn;
+                        document.getElementById('creator-profile-email').textContent = creator.email;
+                        document.getElementById('creator-profile-desig').textContent = creator.desig;
+                    } else {
+                        document.getElementById('event-creator-profile').classList.add('hidden');
+                    }
+
+                    eventDetailsModal.classList.remove('hidden');
+                }
+            });
+            calendarInstance.render();
+        }
+
+        function renderAdminDashboard() {
+            const usersList = document.getElementById('users-list-container');
+            usersList.innerHTML = '';
+            usersDB.forEach(user => {
+                const userDiv = document.createElement('div');
+                userDiv.className = 'p-4 my-2 bg-gray-700 rounded-lg flex flex-col sm:flex-row justify-between items-center';
+                userDiv.innerHTML = `
+                    <div class="mb-2 sm:mb-0">
+                        <p class="font-bold">${user.name}</p>
+                        <p class="text-sm text-gray-400">${user.usn} | ${user.email}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <select id="role-${user.id}" class="p-2 rounded-lg bg-gray-600 border border-gray-500 text-sm">
+                            <option value="Admin" ${user.desig === 'Admin' ? 'selected' : ''}>Admin</option>
+                            <option value="Club Leader" ${user.desig === 'Club Leader' ? 'selected' : ''}>Club Leader</option>
+                            <option value="Class CR" ${user.desig === 'Class CR' ? 'selected' : ''}>Class CR</option>
+                            <option value="Student" ${user.desig === 'Student' ? 'selected' : ''}>Student</option>
+                        </select>
+                        <button class="update-role-btn p-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 transition-colors text-xs" data-id="${user.id}">Update</button>
+                        <button class="delete-user-btn p-2 rounded-lg bg-red-600 hover:bg-red-700 transition-colors text-xs" data-id="${user.id}">Delete</button>
+                    </div>
+                `;
+                usersList.appendChild(userDiv);
+            });
+
+            document.querySelectorAll('.update-role-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const userId = btn.dataset.id;
+                    const newRole = document.getElementById(`role-${userId}`).value;
+                    updateRole(userId, newRole);
+                });
+            });
+            document.querySelectorAll('.delete-user-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const userId = btn.dataset.id;
+                    const confirmed = await showConfirmModal('Are you sure you want to delete this user?');
+                    if (confirmed) {
+                        deleteUser(userId);
+                    }
+                });
+            });
+
+            const adminEventsList = document.getElementById('admin-events-list');
+            adminEventsList.innerHTML = '';
+            const sortedEvents = [...eventsDB].sort((a, b) => new Date(b.start) - new Date(a.start));
+
+            sortedEvents.forEach(event => {
+                const eventDiv = document.createElement('div');
+                eventDiv.className = 'p-4 my-2 bg-gray-700 rounded-lg flex justify-between items-center';
+                eventDiv.innerHTML = `
+                    <div>
+                        <p class="font-bold text-lg">${event.title}</p>
+                        <p class="text-sm text-gray-400">${event.start} to ${event.end}</p>
+                        <p class="text-sm text-gray-400">Created by: ${usersDB.find(u => u.usn === event.USN)?.name || 'Unknown'}</p>
+                    </div>
+                    <button class="delete-event-btn p-2 rounded-lg bg-red-600 hover:bg-red-700 transition-colors text-xs" data-id="${event.id}">Delete</button>
+                `;
+                adminEventsList.appendChild(eventDiv);
+            });
+
+            document.querySelectorAll('.delete-event-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const eventId = btn.dataset.id;
+                    const confirmed = await showConfirmModal('Are you sure you want to delete this event?');
+                    if (confirmed) {
+                        deleteEvent(eventId);
+                    }
+                });
+            });
+        }
+
+        function setupEventListeners() {
+            document.getElementById('logout-button').addEventListener('click', () => signOut(auth));
+            document.getElementById('add-event-button').addEventListener('click', () => {
+                const title = document.getElementById('event-title').value;
+                const start = document.getElementById('event-start-date').value;
+                const end = document.getElementById('event-end-date').value;
+                const description = document.getElementById('event-description').value;
+                const color = document.getElementById('event-color').value;
+
+                if (!title || !start || !end) {
+                    showStatusModal("Please fill in all event fields.", false);
+                    return;
+                }
+
+                const newEvent = {
+                    title,
+                    start,
+                    end,
+                    description,
+                    color,
+                    USN: currentUser.usn
+                };
+
+                saveEvent(newEvent);
+                renderCalendar();
+            });
+
+            document.getElementById('export-csv-button').addEventListener('click', () => {
+                const data = eventsDB.map(e => ({
+                    Title: e.title,
+                    Start: e.start,
+                    End: e.end,
+                    Description: e.description,
+                    Creator_USN: e.USN
+                }));
+                const csvContent = "data:text/csv;charset=utf-8," +
+                    Object.keys(data[0]).join(',') + "\n" +
+                    data.map(e => Object.values(e).join(',')).join("\n");
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "schedule_sync_events.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+
+            document.querySelectorAll('.tab-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.replace('bg-indigo-600', 'bg-gray-700'));
+                    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.replace('hover:bg-indigo-700', 'hover:bg-gray-600'));
+                    document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.add('hidden'));
+
+                    this.classList.replace('bg-gray-700', 'bg-indigo-600');
+                    this.classList.replace('hover:bg-gray-600', 'hover:bg-indigo-700');
+                    document.getElementById(this.dataset.tab).classList.remove('hidden');
+                });
+            });
+            document.getElementById('feedback-button').addEventListener('click', () => {
+                document.getElementById('feedback-name-display').textContent = `Your Name: ${currentUser?.name || 'N/A'}`;
+                document.getElementById('feedback-email-display').textContent = `Your Email: ${currentUser?.email || 'N/A'}`;
+                feedbackModal.classList.remove('hidden');
+            });
+            document.getElementById('close-feedback-modal').addEventListener('click', () => feedbackModal.classList.add('hidden'));
+            document.getElementById('close-event-modal').addEventListener('click', () => eventDetailsModal.classList.add('hidden'));
+            document.getElementById('close-status-modal').addEventListener('click', () => hideStatusModal());
+
+            document.getElementById('send-feedback-button').addEventListener('click', () => {
+                const message = document.getElementById('feedback-message').value;
+                const statusEl = document.getElementById('feedback-status');
+                if (!message.trim()) {
+                    statusEl.textContent = 'Please enter your feedback.';
+                    statusEl.classList.add('text-red-500');
+                    return;
+                }
+                statusEl.textContent = 'Sending...';
+
+                console.log("Simulating sending feedback email...");
+                console.log("Feedback from:", currentUser?.name, currentUser?.email);
+                console.log("Message:", message);
+
+                showStatusModal("Thanks for your feedback! We will look into it soon.", true);
+                document.getElementById('feedback-message').value = '';
+                feedbackModal.classList.add('hidden');
+            });
+
+            document.getElementById('send-emails-btn').addEventListener('click', () => {
+                const subject = document.getElementById('email-subject').value;
+                const body = document.getElementById('email-body').value;
+                const consentFilter = document.getElementById('email-consent-filter').checked;
+                const emailStatus = document.getElementById('email-status');
+
+                if (!subject || !body) {
+                    emailStatus.textContent = 'Please fill in both subject and body.';
+                    emailStatus.classList.add('text-red-500');
+                    return;
+                }
+
+                let emailListToSend = [];
+                usersDB.forEach(user => {
+                    if ((consentFilter && user.consent === 'Y') || !consentFilter) {
+                        emailListToSend.push(user.email);
+                    }
+                });
+
+                if (emailListToSend.length === 0) {
+                    emailStatus.textContent = "No users to send emails to based on the filter.";
+                    emailStatus.classList.add('text-red-500');
+                    return;
+                }
+
+                console.log(`Simulating bulk email to ${emailListToSend.length} users.`);
+                console.log("Subject:", subject);
+                console.log("Recipients:", emailListToSend);
+
+                showStatusModal(`Emails sent to ${emailListToSend.length} users.`, true);
+                document.getElementById('email-subject').value = '';
+                document.getElementById('email-body').value = '';
+                emailStatus.textContent = '';
+            });
+
+            let confirmPromise = null;
+            function showConfirmModal(message) {
+                document.getElementById('confirm-message').textContent = message;
+                document.getElementById('confirm-modal').classList.remove('hidden');
+                return new Promise((resolve) => {
+                    confirmPromise = resolve;
+                });
+            }
+
+            document.getElementById('confirm-yes-btn').addEventListener('click', () => {
+                document.getElementById('confirm-modal').classList.add('hidden');
+                if (confirmPromise) confirmPromise(true);
+            });
+
+            document.getElementById('confirm-no-btn').addEventListener('click', () => {
+                document.getElementById('confirm-modal').classList.add('hidden');
+                if (confirmPromise) confirmPromise(false);
+            });
+        }
+        
+        function saveEvent(event) {
+            event.id = `event${eventsDB.length + 1}`;
+            eventsDB.push(event);
+            showStatusModal("Event added successfully! Notifying users...", true);
+            console.log("Simulating bulk email to users with consent.");
+        }
+
+        function deleteUser(userId) {
+            const userIndex = usersDB.findIndex(u => u.id === userId);
+            if (userIndex > -1) {
+                usersDB.splice(userIndex, 1);
+                showStatusModal("User deleted successfully.", true);
+                renderAdminDashboard();
+            } else {
+                showStatusModal("Error: User not found.", false);
+            }
+        }
+
+        function updateRole(userId, newRole) {
+            const user = usersDB.find(u => u.id === userId);
+            if (user) {
+                user.desig = newRole;
+                showStatusModal("User role updated successfully.", true);
+                renderAdminDashboard();
+            } else {
+                showStatusModal("Error: User not found.", false);
+            }
+        }
+
+        function deleteEvent(eventId) {
+            const eventIndex = eventsDB.findIndex(e => e.id === eventId);
+            if (eventIndex > -1) {
+                eventsDB.splice(eventIndex, 1);
+                showStatusModal("Event deleted successfully.", true);
+                renderCalendar();
+                renderAdminDashboard();
+            } else {
+                showStatusModal("Error: Event not found.", false);
+            }
+        }
+        
+        function showStatusModal(message, isSuccess) {
+            statusMessage.textContent = message;
+            statusIcon.textContent = isSuccess ? '✅' : '❌';
+            statusModal.classList.remove('hidden');
+        }
+
+        function hideStatusModal() {
+            statusModal.classList.add('hidden');
+        }
+
+        initialize();
+    </script>
+</body>
+
+</html>

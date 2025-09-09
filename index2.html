@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --gh-bg: #0d1117;
+            --gh-header: #161b22;
+            --gh-border: #30363d;
+            --gh-text-primary: #c9d1d9;
+            --gh-text-secondary: #8b949e;
+            --gh-bg-main: #f6f8fa;
+            --gh-text-main: #24292e;
+            --gh-accent: #58a6ff;
+            --gh-accent-hover: #1f6feb;
+            --gh-green: #238636;
+            --gh-green-hover: #2ea043;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+        }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--gh-bg-main);
+            color: var(--gh-text-main);
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        /* General Styles */
+        .repo-item.active-repo {
+            background-color: rgba(88, 166, 255, 0.1);
+            font-weight: 600;
+            color: var(--gh-accent);
+            border-left: 3px solid var(--gh-accent);
+            padding-left: calc(1rem - 3px);
+        }
+        .repo-item.active-repo svg { color: var(--gh-accent); }
+        .source-item.selected { background-color: #dbeafe; }
+        .tag {
+            display: inline-block;
+            padding: 0.1rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-right: 0.5rem;
+            border: 1px solid var(--gh-border);
+        }
+        .todo-item.completed span { text-decoration: line-through; color: #6b7280; }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 20px;
+            white-space: nowrap;
+            vertical-align: middle;
+            cursor: pointer;
+            user-select: none;
+            border: 1px solid;
+            border-radius: 6px;
+            appearance: none;
+        }
+        .btn-primary {
+            color: #ffffff;
+            background-color: var(--gh-green);
+            border-color: rgba(240, 246, 252, 0.1);
+        }
+        .btn-primary:hover { background-color: var(--gh-green-hover); }
+
+        .form-control {
+            background-color: #f6f8fa;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            box-shadow: inset 0 1px 0 rgba(208,215,222,0.2);
+        }
+        .form-control:focus { border-color: var(--gh-accent); outline: none; box-shadow: 0 0 0 3px rgba(88,166,255,0.3); }
+
+        .tab-nav-item {
+            padding: 8px 16px;
+            font-size: 14px;
+            line-height: 30px;
+            color: var(--gh-text-main);
+            text-decoration: none;
+            white-space: nowrap;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .tab-nav-item.active {
+            font-weight: 600;
+            color: var(--gh-text-main);
+            border-bottom-color: #fd8c73;
+        }
+
+        /* Specific styles for the new dashboard section */
+        #student-dashboard {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- Auth Screen -->
+    <div id="auth-screen" class="flex items-center justify-center h-screen bg-gray-100">
+        <div class="w-full max-w-sm p-6 sm:p-8 space-y-4">
+            <div class="text-center mb-6">
+                <i class="fas fa-book-open text-4xl text-gray-700"></i>
+                <h1 class="text-2xl font-semibold mt-2">Sign in to Student Hub</h1>
+            </div>
+            <div class="bg-white border border-gray-300 rounded-lg p-6">
+                <!-- Login Form -->
+                <form id="login-form">
+                    <div id="login-error" class="hidden p-3 mb-3 text-sm text-red-800 bg-red-100 border border-red-300 rounded"></div>
+                    <div class="space-y-3">
+                        <div>
+                            <label for="login-email" class="block text-sm font-medium text-gray-700">Email address</label>
+                            <input id="login-email" type="email" required class="w-full mt-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 form-control" placeholder="you@example.com">
+                        </div>
+                        <div>
+                             <label for="login-password" class="block text-sm font-medium text-gray-700">Password</label>
+                            <input id="login-password" type="password" required class="w-full mt-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 form-control" placeholder="Password">
+                        </div>
+                        <div>
+                            <label for="login-name" class="block text-sm font-medium text-gray-700">Name</label>
+                            <input id="login-name" type="text" class="w-full mt-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 form-control" placeholder="Your Name">
+                        </div>
+                        <div>
+                            <label for="login-usn" class="block text-sm font-medium text-gray-700">USN</label>
+                            <input id="login-usn" type="text" class="w-full mt-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 form-control" placeholder="Your USN">
+                        </div>
+                        <button type="submit" class="w-full btn btn-primary justify-center">Sign in</button>
+                    </div>
+                </form>
+                <!-- Sign Up Form (hidden by default) -->
+                <form id="signup-form" class="hidden">
+                     <div id="signup-error" class="hidden p-3 mb-3 text-sm text-red-800 bg-red-100 border border-red-300 rounded"></div>
+                    <div class="space-y-3">
+                        <div>
+                            <label for="signup-email" class="block text-sm font-medium text-gray-700">Email address</label>
+                            <input id="signup-email" type="email" required class="w-full mt-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 form-control" placeholder="you@example.com">
+                        </div>
+                        <div>
+                             <label for="signup-password" class="block text-sm font-medium text-gray-700">Password</label>
+                            <input id="signup-password" type="password" required class="w-full mt-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 form-control" placeholder="Create a password">
+                        </div>
+                        <div>
+                            <label for="signup-name" class="block text-sm font-medium text-gray-700">Name</label>
+                            <input id="signup-name" type="text" required class="w-full mt-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 form-control" placeholder="Your Name">
+                        </div>
+                        <div>
+                            <label for="signup-usn" class="block text-sm font-medium text-gray-700">USN</label>
+                            <input id="signup-usn" type="text" required class="w-full mt-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 form-control" placeholder="Your USN">
+                        </div>
+                        <button type="submit" class="w-full btn btn-primary justify-center">Sign up for Student Hub</button>
+                    </div>
+                </form>
+            </div>
+            <div class="text-center p-4 border border-gray-300 rounded-lg text-sm">
+                <span id="auth-switch-text">New to Student Hub?</span>
+                <a href="#" id="show-signup" class="font-medium text-blue-600 hover:underline">Create an account</a>
+                <a href="#" id="show-login" class="hidden font-medium text-blue-600 hover:underline">Sign in</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app-container" class="hidden relative min-h-screen md:flex">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="w-72 bg-[#0d1117] text-[#c9d1d9] flex flex-col fixed inset-y-0 left-0 z-30 transform -translate-x-full transition-transform duration-300 ease-in-out md:relative md:w-64 md:translate-x-0 border-r border-[#30363d]">
+            <button id="close-sidebar-btn" class="md:hidden absolute top-2 right-2 p-2 text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
+            <div class="px-4 py-4 border-b border-[#30363d] flex items-center">
+                <i class="fas fa-book-open text-xl mr-2"></i>
+                <h1 class="text-lg font-semibold text-white">Student Hub</h1>
+            </div>
+            <nav id="repo-list" class="flex-1 p-2 space-y-1 overflow-y-auto">
+                <div>
+                    <h2 class="px-2 mb-2 text-xs font-semibold tracking-wider text-[#8b949e] uppercase">Dashboard & Links</h2>
+                    <a href="#" data-repo="Dashboard" class="repo-item flex items-center px-4 py-2 rounded-md hover:bg-[#161b22] active-repo">
+                        <i class="fas fa-chart-line w-5 h-5 mr-3 text-gray-400"></i><span>My Dashboard</span>
+                    </a>
+                </div>
+                <div>
+                    <h2 class="px-2 mt-4 mb-2 text-xs font-semibold tracking-wider text-[#8b949e] uppercase">Repositories</h2>
+                    <a href="#" data-repo="Maths" class="repo-item flex items-center px-4 py-2 rounded-md hover:bg-[#161b22]">
+                        <i class="fas fa-calculator w-5 h-5 mr-3 text-gray-400"></i><span>Maths</span>
+                    </a>
+                    <a href="#" data-repo="Data Structures" class="repo-item flex items-center px-4 py-2 rounded-md hover:bg-[#161b22]">
+                        <i class="fas fa-project-diagram w-5 h-5 mr-3 text-gray-400"></i><span>Data Structures</span>
+                    </a>
+                    <a href="#" data-repo="OOPS" class="repo-item flex items-center px-4 py-2 rounded-md hover:bg-[#161b22]">
+                        <i class="fas fa-cubes w-5 h-5 mr-3 text-gray-400"></i><span>OOPS</span>
+                    </a>
+                    <a href="#" data-repo="COA" class="repo-item flex items-center px-4 py-2 rounded-md hover:bg-[#161b22]">
+                        <i class="fas fa-microchip w-5 h-5 mr-3 text-gray-400"></i><span>COA</span>
+                    </a>
+                    <a href="#" data-repo="EOIC" class="repo-item flex items-center px-4 py-2 rounded-md hover:bg-[#161b22]">
+                        <i class="fas fa-bolt w-5 h-5 mr-3 text-gray-400"></i><span>EOIC</span>
+                    </a>
+                    <a href="#" data-repo="DPS" class="repo-item flex items-center px-4 py-2 rounded-md hover:bg-[#161b22]">
+                        <i class="fas fa-wave-square w-5 h-5 mr-3 text-gray-400"></i><span>DPS</span>
+                    </a>
+                    <a href="#" data-repo="FEWD" class="repo-item flex items-center px-4 py-2 rounded-md hover:bg-[#161b22]">
+                        <i class="fab fa-js-square w-5 h-5 mr-3 text-gray-400"></i><span>FEWD</span>
+                    </a>
+                    <a href="#" data-repo="IDT" class="repo-item flex items-center px-4 py-2 rounded-md hover:bg-[#161b22]">
+                        <i class="fas fa-lightbulb w-5 h-5 mr-3 text-gray-400"></i><span>IDT</span>
+                    </a>
+                    <a href="#" data-repo="Kannada" class="repo-item flex items-center px-4 py-2 rounded-md hover:bg-[#161b22]">
+                        <i class="fas fa-language w-5 h-5 mr-3 text-gray-400"></i><span>Kannada</span>
+                    </a>
+                </div>
+                <div>
+                    <h2 class="px-2 mt-4 mb-2 text-xs font-semibold tracking-wider text-[#8b949e] uppercase">Lab Repositories</h2>
+                    <a href="#" data-repo="FEWD Lab" class="repo-item flex items-center px-4 py-2 rounded-md hover:bg-[#161b22]">
+                        <i class="fas fa-flask w-5 h-5 mr-3 text-gray-400"></i><span>FEWD Lab</span>
+                    </a>
+                    <a href="#" data-repo="R Lab" class="repo-item flex items-center px-4 py-2 rounded-md hover:bg-[#161b22]">
+                        <i class="fab fa-r-project w-5 h-5 mr-3 text-gray-400"></i><span>R Lab</span>
+                    </a>
+                    <a href="#" data-repo="DS Lab" class="repo-item flex items-center px-4 py-2 rounded-md hover:bg-[#161b22]">
+                        <i class="fas fa-database w-5 h-5 mr-3 text-gray-400"></i><span>DS Lab</span>
+                    </a>
+                    <a href="#" data-repo="OOPS Lab" class="repo-item flex items-center px-4 py-2 rounded-md hover:bg-[#161b22]">
+                        <i class="fas fa-cogs w-5 h-5 mr-3 text-gray-400"></i><span>OOPS Lab</span>
+                    </a>
+                </div>
+            </nav>
+            <div id="all-tasks-container" class="p-4 border-t border-[#30363d] overflow-y-auto" style="max-height: 25%;">
+                <h2 class="px-2 mb-2 text-xs font-semibold tracking-wider text-[#8b949e] uppercase">High-Priority Issues</h2>
+                <ul id="all-tasks-list" class="space-y-2 text-sm"></ul>
+            </div>
+            <div id="user-info" class="px-4 py-3 border-t border-[#30363d] mt-auto">
+                <p id="user-email" class="text-sm font-medium text-white truncate"></p>
+                <button id="sign-out-btn" class="w-full mt-2 px-4 py-1 text-sm font-medium text-white bg-transparent border border-gray-600 rounded-md hover:bg-gray-700 hover:border-gray-500">Sign Out</button>
+            </div>
+        </aside>
+        
+        <div id="sidebar-overlay" class="hidden md:hidden fixed inset-0 bg-black bg-opacity-50 z-20"></div>
+
+        <!-- Main Content -->
+        <main id="main-content" class="flex-1 p-4 pt-16 md:pt-6 md:px-8 overflow-y-auto relative bg-white">
+            <button id="hamburger-btn" class="md:hidden absolute top-4 left-4 z-10 p-2 bg-white rounded-md shadow border"><i class="fas fa-bars text-gray-800"></i></button>
+
+            <!-- Student Dashboard (default view) -->
+            <div id="student-dashboard" class="h-full flex flex-col">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-3xl font-bold text-gray-800">Student Dashboard</h2>
+                </div>
+
+                <!-- Student Profile Card -->
+                <div class="bg-gray-50 p-6 rounded-2xl shadow-inner mb-6">
+                    <div class="flex items-center space-x-4">
+                        <div class="flex-shrink-0 w-16 h-16 bg-blue-200 rounded-full flex items-center justify-center text-blue-800 font-bold text-xl">
+                            <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900" id="display-name"></h3>
+                            <p class="text-gray-500 text-sm" id="display-usn"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Academic Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-blue-100 p-6 rounded-2xl shadow-md">
+                        <h4 class="text-lg font-semibold text-blue-800">GPA</h4>
+                        <p class="text-3xl font-bold text-blue-900 mt-2">8.5</p>
+                        <p class="text-xs text-blue-600 mt-1">out of 10.0</p>
+                    </div>
+                    <!-- Combined Attendance Card -->
+                    <div class="bg-green-100 p-6 rounded-2xl shadow-md">
+                        <h4 class="text-lg font-semibold text-green-800">Attendance</h4>
+                        <p class="text-3xl font-bold text-green-900 mt-2">92%</p>
+                        <p class="text-xs text-green-600 mt-1 mb-4">in current semester</p>
+                        <h4 class="text-lg font-semibold text-green-800 mb-2">ATTENDANce shield</h4>
+                        <p class="text-xs text-green-600 mb-2">Mock attendance tracker</p>
+                        <div class="w-full bg-green-200 rounded-full h-4">
+                            <div class="bg-green-500 h-4 rounded-full" style="width: 85%"></div>
+                        </div>
+                        <p class="text-sm text-green-700 mt-2 font-semibold">Current Attendance: 85%</p>
+                    </div>
+                    <div class="bg-purple-100 p-6 rounded-2xl shadow-md">
+                        <h4 class="text-lg font-semibold text-purple-800">Courses</h4>
+                        <p class="text-3xl font-bold text-purple-900 mt-2">5</p>
+                        <p class="text-xs text-purple-600 mt-1">enrolled this semester</p>
+                    </div>
+                </div>
+
+                <!-- External Link Card Holder -->
+                <div class="bg-yellow-100 p-6 rounded-2xl shadow-md">
+                    <h4 class="text-lg font-semibold text-yellow-800 mb-2">Events Webpage</h4>
+                    <p class="text-sm text-yellow-600 mb-4">Click the button below to navigate to the events webpage.</p>
+                    <a id="events-link" href="#" class="inline-block w-full text-center py-3 px-4 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-xl shadow-md transition-colors duration-200">
+                        Go to Events
+                    </a>
+                </div>
+            </div>
+
+            <!-- Git-Tutor Repositories -->
+            <div id="repo-details" class="hidden h-full flex flex-col">
+                 <div class="flex justify-between items-center pb-3 border-b border-gray-200 mb-4">
+                    <h2 id="repo-title" class="text-xl md:text-2xl font-normal text-gray-500">
+                        <span id="repo-owner" class="font-semibold text-blue-600"></span> /
+                        <span class="font-bold text-gray-800"></span>
+                    </h2>
+                    <span id="save-status" class="text-sm text-gray-500 transition-opacity duration-300 opacity-0"></span>
+                </div>
+
+                <!-- Tab Navigation -->
+                <div class="border-b border-gray-200 mb-4">
+                    <nav id="tab-nav" class="flex -mb-px">
+                        <a href="#" class="tab-nav-item active" data-tab="readme"><i class="fas fa-book-open mr-2"></i>README.md</a>
+                        <a href="#" class="tab-nav-item" data-tab="planner"><i class="fas fa-map-signs mr-2"></i>PLAN.md</a>
+                        <a href="#" class="tab-nav-item" data-tab="issues"><i class="fas fa-dot-circle mr-2"></i>TASKS.md</a>
+                    </nav>
+                </div>
+
+                <!-- Tab Content -->
+                <div class="flex-grow flex flex-col min-h-0">
+                    <div id="tab-content-readme" class="tab-content flex-grow flex flex-col">
+                        <textarea id="notes-textarea" class="w-full flex-1 p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition form-control" placeholder="Add notes here... This is your README."></textarea>
+                    </div>
+                    <div id="tab-content-planner" class="tab-content hidden flex-grow flex flex-col">
+                          <div class="relative flex-1 flex flex-col">
+                              <textarea id="study-planner-textarea" class="w-full flex-1 p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition form-control" placeholder="Track your study sources. Type '/' to see options..."></textarea>
+                              <div id="sources-popup" class="hidden absolute z-10 w-48 bg-white rounded-md shadow-lg border border-gray-200 text-sm"></div>
+                          </div>
+                    </div>
+                    <div id="tab-content-issues" class="tab-content hidden flex-grow flex flex-col">
+                        <textarea id="tasks-textarea" class="w-full flex-1 p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition form-control" placeholder="Enter tasks here. Use (due: yyyy-mm-dd) for deadlines or (urgent) for priority."></textarea>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Repository Files</h3>
+                     <div class="p-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+                        <div class="flex items-center justify-center">
+                            <label for="file-upload" class="relative cursor-pointer bg-gray-100 rounded-md font-medium text-blue-600 hover:text-blue-500 border border-gray-300 px-3 py-1 text-sm hover:bg-gray-200">
+                                 <span>Add file</span>
+                                 <input id="file-upload" name="file-upload" type="file" class="sr-only" multiple>
+                             </label>
+                        </div>
+                        <p class="text-xs text-gray-500 text-center mt-2">PDF, PPT, PNG, JPG, etc. (File names are saved, not the content)</p>
+                    </div>
+                    <ul id="file-list" class="mt-4 space-y-2"></ul>
+                </div>
+                
+                <div id="todo-section" class="mt-6">
+                     <h3 class="text-lg font-semibold text-gray-800 mb-2">Issue Tracker</h3>
+                    <form id="add-todo-form" class="flex gap-2">
+                        <input id="add-todo-input" type="text" class="flex-grow p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 form-control" placeholder="Add a new issue...">
+                        <button type="submit" class="btn btn-primary">Add</button>
+                    </form>
+                    <ul id="todo-list" class="mt-4 space-y-2 border border-gray-200 rounded-lg"></ul>
+                </div>
+
+                <div id="progress-bars-section" class="mt-6"></div>
+            </div>
+             <div id="loading-spinner" class="hidden absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50">
+                 <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+             </div>
+        </main>
+    </div>
+
+    <!-- Source Selection Modal -->
+    <div id="source-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-40">
+      <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">Select Source Branch for File</h3>
+          <p class="text-sm text-gray-500 mt-2" id="modal-filename"></p>
+          <div id="modal-source-options" class="mt-4 space-y-2"></div>
+          <div class="items-center px-4 py-3">
+            <button id="modal-cancel-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md w-full hover:bg-gray-300">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, arrayUnion, arrayRemove, collection, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- DOM ELEMENTS ---
+        const authScreen = document.getElementById('auth-screen');
+        const appContainer = document.getElementById('app-container');
+        const loginForm = document.getElementById('login-form');
+        const signupForm = document.getElementById('signup-form');
+        const repoList = document.getElementById('repo-list');
+        const mainContent = document.getElementById('main-content');
+        const studentDashboard = document.getElementById('student-dashboard');
+        const repoDetails = document.getElementById('repo-details');
+        const repoTitle = document.getElementById('repo-title');
+        const notesTextarea = document.getElementById('notes-textarea');
+        const studyPlannerTextarea = document.getElementById('study-planner-textarea');
+        const tasksTextarea = document.getElementById('tasks-textarea');
+        const fileUpload = document.getElementById('file-upload');
+        const fileListElem = document.getElementById('file-list');
+        const saveStatus = document.getElementById('save-status');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const sourceModal = document.getElementById('source-modal');
+        const modalFilename = document.getElementById('modal-filename');
+        const modalSourceOptions = document.getElementById('modal-source-options');
+        const modalCancelBtn = document.getElementById('modal-cancel-btn');
+        const userEmailDisplay = document.getElementById('user-email');
+        const signOutBtn = document.getElementById('sign-out-btn');
+        const showSignup = document.getElementById('show-signup');
+        const showLogin = document.getElementById('show-login');
+        const authSwitchText = document.getElementById('auth-switch-text');
+        const sidebar = document.getElementById('sidebar');
+        const hamburgerBtn = document.getElementById('hamburger-btn');
+        const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const addTodoForm = document.getElementById('add-todo-form');
+        const addTodoInput = document.getElementById('add-todo-input');
+        const todoListElem = document.getElementById('todo-list');
+        const allTasksList = document.getElementById('all-tasks-list');
+        const tabNav = document.getElementById('tab-nav');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const displayName = document.getElementById('display-name');
+        const displayUsn = document.getElementById('display-usn');
+        const eventsLink = document.getElementById('events-link');
+
+        // --- APP STATE ---
+        let db, auth;
+        let currentRepo = null;
+        let userId = null;
+        let noteDebounceTimeout, plannerDebounceTimeout, tasksDebounceTimeout;
+        let unsubscribe, unsubscribeAllTasks;
+        const sources = ['Academic pal', 'mithil notes', 'LMS', 'own notes', 'others'];
+        let resolveFileUpload;
+        let sourcePopupOpen = false;
+        let selectedSourceIndex = -1;
+
+        // --- FIREBASE CONFIG (Your personal configuration) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdTqMliXW7ZK4s3IdNE2TPf724lWdAmaQ",
+            authDomain: "notestack-47cc7.firebaseapp.com",
+            projectId: "notestack-47cc7",
+            storageBucket: "notestack-47cc7.appspot.com",
+            messagingSenderId: "336248626285",
+            appId: "1:336248626285:web:2dbfe4f3135ec2fe8fb364"
+        };
+        const appId = firebaseConfig.projectId;
+
+        // --- INITIALIZATION ---
+        async function initialize() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setupAuthListener();
+                setupAuthForms();
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                authScreen.innerHTML = `<div class="p-4 bg-red-100 text-red-700 rounded-lg"><strong>Error:</strong> Could not connect to the database.</div>`;
+            }
+        }
+        
+        function setupAuthListener() {
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    authScreen.classList.add('hidden');
+                    appContainer.classList.remove('hidden');
+                    userEmailDisplay.textContent = user.email.split('@')[0];
+                    document.getElementById('repo-owner').textContent = user.email.split('@')[0];
+                    setupAppEventListeners();
+                    setupAllTasksListener();
+                    toggleSidebar(false);
+                    // Fetch and display user data on the dashboard
+                    await fetchAndDisplayUserData(userId);
+                    // Set default view to dashboard
+                    selectRepo('Dashboard');
+                } else {
+                    userId = null;
+                    authScreen.classList.remove('hidden');
+                    appContainer.classList.add('hidden');
+                    if (unsubscribe) unsubscribe();
+                    if (unsubscribeAllTasks) unsubscribeAllTasks();
+                    currentRepo = null;
+                    repoDetails.classList.add('hidden');
+                    studentDashboard.style.display = 'none';
+                    toggleSidebar(false);
+                }
+            });
+        }
+        
+        async function fetchAndDisplayUserData(userId) {
+            const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/dashboard/user_info`);
+            const docSnap = await getDoc(userDocRef);
+            if (docSnap.exists()) {
+                const userData = docSnap.data();
+                displayName.textContent = userData.name || 'Student';
+                displayUsn.textContent = userData.usn || 'N/A';
+            } else {
+                displayName.textContent = 'Student';
+                displayUsn.textContent = 'N/A';
+            }
+        }
+
+        async function saveUserData(name, usn) {
+            if (!userId) return;
+            const userDocRef = doc(db, `artifacts/${appId}/users/${userId}/dashboard/user_info`);
+            await setDoc(userDocRef, { name, usn }, { merge: true });
+        }
+
+        function setupAuthForms() {
+            const toggleForms = (showSignupForm) => {
+                loginForm.classList.toggle('hidden', showSignupForm);
+                signupForm.classList.toggle('hidden', !showSignupForm);
+                showLogin.classList.toggle('hidden', !showSignupForm);
+                showSignup.classList.toggle('hidden', showSignupForm);
+                authSwitchText.textContent = showSignupForm ? 'Already have an account?' : 'New to Student Hub?';
+            };
+
+            showSignup.addEventListener('click', (e) => { e.preventDefault(); toggleForms(true); });
+            showLogin.addEventListener('click', (e) => { e.preventDefault(); toggleForms(false); });
+            
+            const handleError = (form, error) => {
+                const errorDiv = document.getElementById(`${form}-error`);
+                errorDiv.textContent = error.message;
+                errorDiv.classList.remove('hidden');
+            };
+
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                try {
+                    await signInWithEmailAndPassword(auth, loginForm['login-email'].value, loginForm['login-password'].value);
+                    await saveUserData(loginForm['login-name'].value, loginForm['login-usn'].value);
+                } catch (error) { handleError('login', error); }
+            });
+
+            signupForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                try {
+                    const userCredential = await createUserWithEmailAndPassword(auth, signupForm['signup-email'].value, signupForm['signup-password'].value);
+                    await saveUserData(signupForm['signup-name'].value, signupForm['signup-usn'].value);
+                } catch (error) { handleError('signup', error); }
+            });
+
+            signOutBtn.addEventListener('click', () => signOut(auth));
+        }
+
+        function toggleSidebar(show) {
+            if (show) {
+                sidebar.classList.remove('-translate-x-full');
+                sidebarOverlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                sidebarOverlay.classList.add('hidden');
+            }
+        }
+
+        function setupAppEventListeners() {
+            hamburgerBtn.addEventListener('click', () => toggleSidebar(true));
+            closeSidebarBtn.addEventListener('click', () => toggleSidebar(false));
+            sidebarOverlay.addEventListener('click', () => toggleSidebar(false));
+
+            repoList.addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = e.target.closest('.repo-item');
+                if (target && target.dataset.repo) selectRepo(target.dataset.repo);
+            });
+
+            const setupDebouncedSave = (textarea, fieldName, timeoutVar) => {
+                textarea.addEventListener('input', () => {
+                    showSaveStatus('Committing...');
+                    clearTimeout(window[timeoutVar]);
+                    window[timeoutVar] = setTimeout(() => {
+                        saveField(fieldName, textarea.value);
+                        if(fieldName === 'notes' || fieldName === 'studyPlanner') parseAndCreateTrackers();
+                    }, 1000);
+                });
+            };
+
+            setupDebouncedSave(notesTextarea, 'notes', 'noteDebounceTimeout');
+            setupDebouncedSave(tasksTextarea, 'tasks', 'tasksDebounceTimeout');
+            
+            studyPlannerTextarea.addEventListener('input', handlePlannerInput);
+            studyPlannerTextarea.addEventListener('keydown', handlePlannerKeydown);
+            studyPlannerTextarea.addEventListener('blur', hideSourcesPopup);
+            
+            fileUpload.addEventListener('change', handleFileSelection);
+            modalCancelBtn.addEventListener('click', () => { closeSourceModal(); if (resolveFileUpload) resolveFileUpload(null); });
+            
+            mainContent.addEventListener('click', handleProgressButtonClick);
+            addTodoForm.addEventListener('submit', handleAddTodo);
+
+            tabNav.addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = e.target.closest('.tab-nav-item');
+                if (!target || target.classList.contains('active')) return;
+                
+                document.querySelectorAll('.tab-nav-item').forEach(tab => tab.classList.remove('active'));
+                target.classList.add('active');
+                
+                tabContents.forEach(content => content.classList.add('hidden'));
+                document.getElementById(`tab-content-${target.dataset.tab}`).classList.remove('hidden');
+            });
+
+            eventsLink.href = 'events.html';
+        }
+
+        function selectRepo(repoId) {
+            if (currentRepo === repoId) return;
+            if (unsubscribe) unsubscribe();
+            currentRepo = repoId;
+
+            document.querySelectorAll('.repo-item').forEach(item => {
+                item.classList.toggle('active-repo', item.dataset.repo === repoId);
+            });
+            
+            if (repoId === 'Dashboard') {
+                repoDetails.classList.add('hidden');
+                studentDashboard.style.display = 'block';
+                return;
+            }
+
+            studentDashboard.style.display = 'none';
+            repoDetails.classList.remove('hidden');
+            loadingSpinner.classList.remove('hidden');
+
+            repoTitle.querySelector('span:last-child').textContent = repoId;
+            [notesTextarea, studyPlannerTextarea, tasksTextarea].forEach(el => el.value = '');
+            [fileListElem, todoListElem].forEach(el => el.innerHTML = '');
+
+            const docRef = doc(db, `artifacts/${appId}/users/${userId}/subjects/${currentRepo}`);
+            unsubscribe = onSnapshot(docRef, (doc) => {
+                loadingSpinner.classList.add('hidden');
+                const data = doc.exists() ? doc.data() : {};
+                notesTextarea.value = data.notes || '';
+                studyPlannerTextarea.value = data.studyPlanner || '';
+                tasksTextarea.value = data.tasks || '';
+                renderFileList(data.files || []);
+                renderProgressBars(data.progressTrackers || []);
+                renderTodoList(data.todos || []);
+            }, (error) => {
+                console.error("Error fetching data:", error);
+                loadingSpinner.classList.add('hidden');
+                showSaveStatus("Error loading data", true);
+            });
+
+            if (window.innerWidth < 768) toggleSidebar(false);
+        }
+        
+        // --- AGGREGATED TASK LOGIC ---
+        function setupAllTasksListener() {
+            if (!userId) return;
+            const q = query(collection(db, `artifacts/${appId}/users/${userId}/subjects`));
+            
+            unsubscribeAllTasks = onSnapshot(q, (snapshot) => {
+                let allTasks = [];
+                snapshot.forEach((doc) => {
+                    const tasksText = doc.data().tasks;
+                    if (tasksText) {
+                        const parsed = parseTasksFromText(tasksText, doc.id);
+                        allTasks = allTasks.concat(parsed);
+                    }
+                });
+                renderAllTasks(sortAggregatedTasks(allTasks));
+            });
+        }
+        
+        function parseTasksFromText(text, subject) {
+            return text.split('\n').filter(line => line.trim() !== '').map(line => {
+                const isUrgent = /\((urgent|emergency)\)/i.test(line);
+                const dueMatch = line.match(/\(due:\s*(\d{4}-\d{2}-\d{2})\)/);
+                return {
+                    text: line.replace(/\(urgent|emergency\)/i, '').replace(/\(due:.*?\)/, '').trim(),
+                    subject,
+                    deadline: dueMatch ? new Date(dueMatch[1] + 'T00:00:00') : null,
+                    isUrgent
+                };
+            }).filter(task => task.isUrgent || task.deadline);
+        }
+
+        function sortAggregatedTasks(tasks) {
+            return tasks.sort((a, b) => {
+                if (a.isUrgent && !b.isUrgent) return -1;
+                if (!a.isUrgent && b.isUrgent) return 1;
+                if (a.deadline && b.deadline) return a.deadline - b.deadline;
+                if (a.deadline) return -1;
+                if (b.deadline) return 1;
+                return 0;
+            });
+        }
+
+        function renderAllTasks(tasks) {
+            allTasksList.innerHTML = tasks.length === 0 
+                ? `<li class="text-gray-400 px-2 text-xs">No high-priority issues found.</li>`
+                : tasks.map(task => `
+                    <li class="p-2 bg-[#161b22] rounded-md">
+                        <div class="flex items-center justify-between">
+                            <div class="truncate text-white">
+                                ${task.isUrgent ? '<i class="fas fa-exclamation-circle text-red-400 mr-1"></i>' : ''}
+                                <span class="truncate">${task.text}</span>
+                            </div>
+                            ${task.deadline ? `<span class="text-xs text-blue-400 font-semibold">${task.deadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>` : ''}
+                        </div>
+                        <div class="text-xs text-gray-400 mt-1">${task.subject}</div>
+                    </li>
+                `).join('');
+        }
+
+        // --- STUDY PLANNER & PROGRESS ---
+        function handlePlannerInput() {
+            showSaveStatus('Committing...');
+            clearTimeout(plannerDebounceTimeout);
+            plannerDebounceTimeout = setTimeout(() => {
+                saveField('studyPlanner', studyPlannerTextarea.value);
+                parseAndCreateTrackers();
+            }, 1000);
+            
+            const cursorPos = studyPlannerTextarea.selectionStart;
+            const textBeforeCursor = studyPlannerTextarea.value.substring(0, cursorPos);
+            
+            if (textBeforeCursor.endsWith('/') && !textBeforeCursor.match(/\/\w+\s*\(\d+\/\d+\)$/)) {
+                showSourcesPopup();
+            } else {
+                hideSourcesPopup();
+            }
+        }
+        
+        function handlePlannerKeydown(e) {
+            if (!sourcePopupOpen) return;
+            const items = document.getElementById('sources-popup').querySelectorAll('.source-item');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedSourceIndex = (selectedSourceIndex + 1) % items.length;
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedSourceIndex = (selectedSourceIndex - 1 + items.length) % items.length;
+            } else if (e.key === 'Enter' || e.key === 'Tab') {
+                e.preventDefault();
+                if (selectedSourceIndex > -1) selectSource(sources[selectedSourceIndex]);
+            } else if (e.key === 'Escape') {
+                hideSourcesPopup();
+            }
+            updatePopupSelection();
+        }
+
+        function showSourcesPopup() {
+            const popup = document.getElementById('sources-popup');
+            popup.innerHTML = sources.map(source => `<div class="p-2 hover:bg-gray-100 cursor-pointer source-item">${source}</div>`).join('');
+            popup.querySelectorAll('.source-item').forEach((item, index) => {
+                item.addEventListener('mousedown', (e) => { e.preventDefault(); selectSource(sources[index]); });
+            });
+            popup.classList.remove('hidden');
+            sourcePopupOpen = true;
+            selectedSourceIndex = -1;
+        }
+
+        function hideSourcesPopup() { setTimeout(() => { document.getElementById('sources-popup').classList.add('hidden'); sourcePopupOpen = false; }, 150); }
+
+        function selectSource(source) {
+            const val = studyPlannerTextarea.value;
+            const pos = studyPlannerTextarea.selectionStart;
+            const newText = `${val.substring(0, pos - 1)}[${source}] ${val.substring(pos)}`;
+            studyPlannerTextarea.value = newText;
+            const newPos = pos + source.length + 2;
+            studyPlannerTextarea.focus();
+            studyPlannerTextarea.setSelectionRange(newPos, newPos);
+            hideSourcesPopup();
+            handlePlannerInput();
+        }
+
+        function updatePopupSelection() {
+            document.querySelectorAll('#sources-popup .source-item').forEach((item, index) => {
+                item.classList.toggle('selected', index === selectedSourceIndex);
+            });
+        }
+
+        async function parseAndCreateTrackers() {
+            if (!currentRepo || !userId) return;
+            const combinedText = notesTextarea.value + '\n' + studyPlannerTextarea.value;
+            const regex = /\/(\w+)\s*\((\d+)\/(\d+)\)/g;
+            let match;
+            const parsedTrackers = new Map();
+            while ((match = regex.exec(combinedText)) !== null) {
+                parsedTrackers.set(match[1], { name: match[1], current: parseInt(match[2]), total: parseInt(match[3]) });
+            }
+
+            const docRef = doc(db, `artifacts/${appId}/users/${userId}/subjects/${currentRepo}`);
+            const docSnap = await getDoc(docRef);
+            const existingTrackers = docSnap.exists() ? docSnap.data().progressTrackers || [] : [];
+            const existingMap = new Map(existingTrackers.map(t => [t.name, t]));
+            
+            parsedTrackers.forEach((val, key) => existingMap.set(key, val));
+
+            const finalTrackers = Array.from(existingMap.values());
+            await setDoc(docRef, { progressTrackers: finalTrackers }, { merge: true });
+        }
+
+        function renderProgressBars(trackers) {
+            const container = document.getElementById('progress-bars-section');
+            if (!trackers || trackers.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            container.innerHTML = `<h3 class="text-lg font-semibold text-gray-800 mb-2">Progress Milestones</h3>` + 
+                trackers.map(tracker => {
+                    const percentage = tracker.total > 0 ? (tracker.current / tracker.total) * 100 : 0;
+                    return `
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-sm font-medium text-gray-700">${tracker.name}</span>
+                            <span class="text-sm font-medium text-gray-500">${tracker.current} / ${tracker.total}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button data-tracker-name="${tracker.name}" data-change="-1" class="progress-btn p-1 text-red-500 rounded-full hover:bg-red-100">-</button>
+                            <div class="w-full bg-gray-200 rounded-full h-2"><div class="bg-blue-600 h-2 rounded-full" style="width: ${percentage}%"></div></div>
+                            <button data-tracker-name="${tracker.name}" data-change="1" class="progress-btn p-1 text-green-500 rounded-full hover:bg-green-100">+</button>
+                        </div>
+                    </div>`;
+                }).join('<div class="my-3"></div>');
+        }
+
+        async function handleProgressButtonClick(e) {
+            const button = e.target.closest('.progress-btn');
+            if (!button || !currentRepo || !userId) return;
+            const { trackerName, change } = button.dataset;
+            const docRef = doc(db, `artifacts/${appId}/users/${userId}/subjects/${currentRepo}`);
+            const docSnap = await getDoc(docRef);
+            if (!docSnap.exists()) return;
+            const trackers = docSnap.data().progressTrackers || [];
+            const tracker = trackers.find(t => t.name === trackerName);
+            if (tracker) {
+                const newCurrent = tracker.current + parseInt(change);
+                if (newCurrent >= 0 && newCurrent <= tracker.total) {
+                    tracker.current = newCurrent;
+                    await setDoc(docRef, { progressTrackers: trackers }, { merge: true });
+                }
+            }
+        }
+        
+        // --- TODO (ISSUES) LOGIC ---
+        async function handleAddTodo(e) {
+            e.preventDefault();
+            const text = addTodoInput.value.trim();
+            if (text === '' || !currentRepo || !userId) return;
+            const newTodo = { id: Date.now().toString(), text, completed: false };
+            const docRef = doc(db, `artifacts/${appId}/users/${userId}/subjects/${currentRepo}`);
+            await setDoc(docRef, { todos: arrayUnion(newTodo) }, { merge: true });
+            addTodoInput.value = '';
+        }
+
+        function renderTodoList(todos) {
+            todoListElem.innerHTML = (todos && todos.length > 0)
+                ? todos.map((todo, index) => {
+                    const isFirst = index === 0;
+                    const isLast = index === todos.length - 1;
+                    let roundedClass = '';
+                    if (isFirst) roundedClass = 'rounded-t-lg';
+                    if (isLast) roundedClass = 'rounded-b-lg';
+                    if (todos.length === 1) roundedClass = 'rounded-lg';
+                    
+                    return `
+                    <li class="todo-item flex items-center justify-between p-3 bg-white border-b border-gray-200 last:border-b-0 ${todo.completed ? 'completed' : ''} ${roundedClass}">
+                        <div class="flex items-center">
+                            <input type="checkbox" data-id="${todo.id}" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" ${todo.completed ? 'checked' : ''}>
+                            <span class="ml-3 text-sm font-medium">${todo.text}</span>
+                        </div>
+                        <button data-id="${todo.id}" class="remove-todo-btn text-gray-500 hover:text-red-600 p-1 rounded-full hover:bg-red-100"><i class="fas fa-times"></i></button>
+                    </li>`;
+                }).join('')
+                : `<li class="text-sm text-gray-500 p-4 text-center">No open issues.</li>`;
+
+            todoListElem.querySelectorAll('input[type="checkbox"]').forEach(el => el.addEventListener('change', (e) => toggleTodoStatus(e.target.dataset.id, e.target.checked)));
+            todoListElem.querySelectorAll('.remove-todo-btn').forEach(el => el.addEventListener('click', (e) => removeTodo(e.currentTarget.dataset.id)));
+        }
+
+        async function updateTodos(updateFn) {
+            if (!currentRepo || !userId) return;
+            const docRef = doc(db, `artifacts/${appId}/users/${userId}/subjects/${currentRepo}`);
+            const docSnap = await getDoc(docRef);
+            if (!docSnap.exists()) return;
+            const todos = docSnap.data().todos || [];
+            const updatedTodos = updateFn(todos);
+            await setDoc(docRef, { todos: updatedTodos }, { merge: true });
+        }
+
+        function toggleTodoStatus(todoId, isCompleted) {
+            updateTodos(todos => todos.map(todo => todo.id === todoId ? { ...todo, completed: isCompleted } : todo));
+        }
+
+        async function removeTodo(todoId) {
+            if (!currentRepo || !userId) return;
+            const docRef = doc(db, `artifacts/${appId}/users/${userId}/subjects/${currentRepo}`);
+            const docSnap = await getDoc(docRef);
+            if (!docSnap.exists()) return;
+            const todoToRemove = (docSnap.data().todos || []).find(t => t.id === todoId);
+            if(todoToRemove) await setDoc(docRef, { todos: arrayRemove(todoToRemove) }, { merge: true });
+        }
+        
+        // --- FILE HANDLING ---
+        async function handleFileSelection(e) {
+            for (const file of e.target.files) {
+                const source = await promptForSource(file);
+                if (source) {
+                    const fileData = { name: file.name, size: file.size, type: file.type, source: source };
+                    const docRef = doc(db, `artifacts/${appId}/users/${userId}/subjects/${currentRepo}`);
+                    await setDoc(docRef, { files: arrayUnion(fileData) }, { merge: true });
+                }
+            }
+            e.target.value = '';
+        }
+
+        function promptForSource(file) {
+            return new Promise((resolve) => {
+                resolveFileUpload = resolve;
+                modalFilename.textContent = file.name;
+                modalSourceOptions.innerHTML = sources.map(source => 
+                    `<button class="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">${source}</button>`
+                ).join('');
+                modalSourceOptions.querySelectorAll('button').forEach((btn, i) => {
+                    btn.onclick = () => { closeSourceModal(); resolve(sources[i]); };
+                });
+                sourceModal.classList.remove('hidden');
+            });
+        }
+
+        function closeSourceModal() { sourceModal.classList.add('hidden'); }
+
+        async function removeFile(fileData) {
+            if (!currentRepo || !userId) return;
+            const docRef = doc(db, `artifacts/${appId}/users/${userId}/subjects/${currentRepo}`);
+            await setDoc(docRef, { files: arrayRemove(fileData) }, { merge: true });
+            showSaveStatus('File removed!');
+        }
+
+        function renderFileList(files) {
+            fileListElem.innerHTML = files.length > 0 ? files.map(file => `
+                <li class="flex items-center justify-between p-2 bg-gray-50 rounded-md border border-gray-200">
+                    <div class="flex items-center truncate">
+                        <span class="tag bg-blue-100 text-blue-800 border-blue-200">${file.source}</span>
+                        <span class="text-sm font-medium truncate" title="${file.name}">${file.name}</span>
+                    </div>
+                    <button class="remove-file-btn text-gray-500 hover:text-red-600 p-1 rounded-full hover:bg-red-100 flex-shrink-0">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </li>
+            `).join('') : `<li class="text-sm text-gray-500">No files attached yet.</li>`;
+
+            fileListElem.querySelectorAll('.remove-file-btn').forEach((btn, i) => {
+                btn.addEventListener('click', () => removeFile(files[i]));
+            });
+        }
+        
+        // --- UTILITY FUNCTIONS ---
+        async function saveField(fieldName, content) {
+            if (!currentRepo || !userId) return;
+            const docRef = doc(db, `artifacts/${appId}/users/${userId}/subjects/${currentRepo}`);
+            try {
+                await setDoc(docRef, { [fieldName]: content }, { merge: true });
+                showSaveStatus('Changes committed!');
+            } catch (error) {
+                console.error(`Error committing ${fieldName}:`, error);
+                showSaveStatus('Commit failed', true);
+            }
+        }
+
+        function showSaveStatus(message, isError = false) {
+            saveStatus.textContent = message;
+            saveStatus.className = `text-sm transition-opacity duration-300 opacity-100 ${isError ? 'text-red-500' : 'text-gray-500'}`;
+            if (!isError && message !== 'Committing...') {
+                setTimeout(() => { saveStatus.classList.add('opacity-0'); }, 2000);
+            }
+        }
+        
+        initialize();
+    </script>
+</body>
+</html>
